@@ -1,10 +1,10 @@
 {
   "functions": {
     "api/defaults.py": {
-      "runtime": "python3.9"
+      "runtime": "@vercel/python"
     },
     "api/simulate.py": {
-      "runtime": "python3.9",
+      "runtime": "@vercel/python",
       "maxDuration": 60
     }
   },
