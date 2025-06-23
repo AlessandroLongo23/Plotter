@@ -1,8 +1,25 @@
 from http.server import BaseHTTPRequestHandler
 import json
+import sys
+import os
 
-# Import from local files instead of utils path
-from problem import Data, Disease
+# Add the current directory to Python path for imports
+sys.path.insert(0, os.path.dirname(__file__))
+
+# Import from local files
+try:
+    from problem import Data, Disease
+except ImportError:
+    # Fallback: try importing from current directory
+    import importlib.util
+    
+    problem_path = os.path.join(os.path.dirname(__file__), 'problem.py')
+    spec = importlib.util.spec_from_file_location("problem", problem_path)
+    problem_module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(problem_module)
+    
+    Data = problem_module.Data
+    Disease = problem_module.Disease
 
 class handler(BaseHTTPRequestHandler):
     def do_GET(self):

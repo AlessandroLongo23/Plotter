@@ -1,10 +1,42 @@
 from http.server import BaseHTTPRequestHandler
 import json
+import sys
+import os
 
-# Import from local files instead of utils path
-from hospital import Hospital
-from problem import Data, Disease
-from simulator import Simulator, EventHistory
+# Add the current directory to Python path for imports
+sys.path.insert(0, os.path.dirname(__file__))
+
+# Import from local files with fallback
+try:
+    from hospital import Hospital
+    from problem import Data, Disease
+    from simulator import Simulator, EventHistory
+except ImportError:
+    # Fallback: try importing from current directory
+    import importlib.util
+    
+    # Import problem module
+    problem_path = os.path.join(os.path.dirname(__file__), 'problem.py')
+    spec = importlib.util.spec_from_file_location("problem", problem_path)
+    problem_module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(problem_module)
+    Data = problem_module.Data
+    Disease = problem_module.Disease
+    
+    # Import hospital module
+    hospital_path = os.path.join(os.path.dirname(__file__), 'hospital.py')
+    spec = importlib.util.spec_from_file_location("hospital", hospital_path)
+    hospital_module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(hospital_module)
+    Hospital = hospital_module.Hospital
+    
+    # Import simulator module
+    simulator_path = os.path.join(os.path.dirname(__file__), 'simulator.py')
+    spec = importlib.util.spec_from_file_location("simulator", simulator_path)
+    simulator_module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(simulator_module)
+    Simulator = simulator_module.Simulator
+    EventHistory = simulator_module.EventHistory
 
 def history_to_json(history: EventHistory) -> list:
     """Convert EventHistory to JSON-serializable format"""
