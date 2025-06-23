@@ -84,3 +84,28 @@ export const patientTypes = writable([
         color: '#00ffff'
     }
 ])
+
+// Simulation parameters
+export const simulationParameters = writable({
+    time: 365, // simulation time in days
+    arrivalRates: {
+        A: 14.5,
+        B: 11.0,
+        C: 8.0,
+        D: 6.5,
+        E: 5.0,
+        F: 13.0
+    },
+    stayMeans: {
+        A: 2.9,
+        B: 4.0,
+        C: 4.5,
+        D: 1.4,
+        E: 3.9,
+        F: 2.2
+    }
+});
+
+// Simulation results
+export const simulationResults = writable(null);
+export const simulationRunning = writable(false);

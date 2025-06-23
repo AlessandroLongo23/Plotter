@@ -26,4 +26,27 @@ export class Hospital {
         patient.bed.free();
         this.patients.splice(this.patients.indexOf(patient), 1);
     }
+
+    // Method to update bed distribution dynamically
+    updateBedDistribution(bedDistribution) {
+        for (let ward of this.wards) {
+            if (bedDistribution[ward.disease] !== undefined) {
+                ward.updateBedCount(bedDistribution[ward.disease]);
+            }
+        }
+        console.log('Updated hospital bed distribution:', bedDistribution);
+    }
+
+    // Method to get current ward by disease type
+    getWard(disease) {
+        return this.wards.find(ward => ward.disease === disease);
+    }
+
+    // Method to reset hospital state
+    reset() {
+        this.patients = [];
+        for (let ward of this.wards) {
+            ward.reset();
+        }
+    }
 }
