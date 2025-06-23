@@ -1,16 +1,10 @@
 from http.server import BaseHTTPRequestHandler
 import json
-import sys
-import os
-from urllib.parse import parse_qs
 
-# Add the Stochastic-Simulation-Project-2/core directory to path
-project_dir = os.path.join(os.path.dirname(__file__), '..', 'Stochastic-Simulation-Project-2', 'core')
-sys.path.insert(0, project_dir)
-
-from utils.hospital import Hospital
-from utils.problem import Data, Disease
-from utils.simulator import Simulator, EventHistory
+# Import from local files instead of utils path
+from hospital import Hospital
+from problem import Data, Disease
+from simulator import Simulator, EventHistory
 
 def history_to_json(history: EventHistory) -> list:
     """Convert EventHistory to JSON-serializable format"""

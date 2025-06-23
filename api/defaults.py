@@ -1,17 +1,13 @@
 from http.server import BaseHTTPRequestHandler
 import json
-import sys
-import os
 
-# Add the Stochastic-Simulation-Project-2/core directory to path
-project_dir = os.path.join(os.path.dirname(__file__), '..', 'Stochastic-Simulation-Project-2', 'core')
-sys.path.insert(0, project_dir)
-
-from utils.problem import Data, Disease
+# Import from local files instead of utils path
+from problem import Data, Disease
 
 class handler(BaseHTTPRequestHandler):
     def do_GET(self):
         try:
+            # Send default parameters to client
             defaults = {
                 "bed_distribution": {
                     "A": Data.bed_distribution[Disease.A],
@@ -38,7 +34,8 @@ class handler(BaseHTTPRequestHandler):
                     "F": Data.stay_means[Disease.F],
                 }
             }
-
+            
+            # Send response
             self.send_response(200)
             self.send_header('Content-type', 'application/json')
             self.send_header('Access-Control-Allow-Origin', '*')
@@ -49,6 +46,7 @@ class handler(BaseHTTPRequestHandler):
             self.wfile.write(json.dumps(defaults).encode())
             
         except Exception as e:
+            # Send error response
             self.send_response(500)
             self.send_header('Content-type', 'application/json')
             self.send_header('Access-Control-Allow-Origin', '*')
