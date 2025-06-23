@@ -1,6 +1,6 @@
-import { RasterContours } from '$lib/classes/RasterContours.svelte.js';
+import { RasterContours } from '$lib/classes/plotter/RasterContours.svelte.js';
+import { Grid } from '$lib/classes/plotter/Grid.svelte.js';
 import { Vector } from '$lib/classes/Vector.svelte.js';
-import { Grid } from '$lib/classes/Grid.svelte.js';
 
 export class Renderer {
     constructor() {

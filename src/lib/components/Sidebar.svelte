@@ -3,7 +3,6 @@
 	import * as ls from 'lucide-svelte';
 
 	import { wards, simulationParameters, simulationRunning } from '$lib/stores/hospital';
-	import { websocketService } from '$lib/services/websocket';
 	import { httpApiService } from '$lib/services/http-api';
 
 	import Checkbox from '$lib/components/ui/Checkbox.svelte';
@@ -19,59 +18,19 @@
 
 	const dispatch = createEventDispatcher();
 	
-	// Service selection and stores
-	let currentService = $state('http'); // Default to HTTP for Vercel compatibility
-	let connected = $state(true); // HTTP is always "connected"
+	// Service stores
 	let status = $state('ready');
 	let error = $state(null);
 	let defaultParameters = $state(null);
 	
-	// Try WebSocket first, fallback to HTTP
-	const initializeServices = async () => {
-		// Check if we're in development and WebSocket is available
-		const isLocal = typeof window !== 'undefined' && 
-						(window.location.hostname === 'localhost' || 
-						 window.location.hostname === '127.0.0.1');
-		
-		if (isLocal) {
-			try {
-				// Try WebSocket first for local development
-				websocketService.connect();
-				
-				// Wait a bit to see if WebSocket connects
-				setTimeout(() => {
-					if (websocketService.connected.value) {
-						currentService = 'websocket';
-						setupWebSocketStores();
-					} else {
-						currentService = 'http';
-						setupHttpStores();
-					}
-				}, 1000);
-			} catch (e) {
-				currentService = 'http';
-				setupHttpStores();
-			}
-		} else {
-			// Use HTTP for production
-			currentService = 'http';
-			setupHttpStores();
-		}
-	};
-
-	const setupWebSocketStores = () => {
-		// Subscribe to WebSocket stores
-		websocketService.connected.subscribe(value => connected = value);
-		websocketService.status.subscribe(value => status = value);
-		websocketService.error.subscribe(value => error = value);
-		websocketService.defaultParameters.subscribe(value => defaultParameters = value);
-	};
-
 	const setupHttpStores = async () => {
 		// Subscribe to HTTP stores
 		httpApiService.status.subscribe(value => status = value);
 		httpApiService.error.subscribe(value => error = value);
 		httpApiService.defaultParameters.subscribe(value => defaultParameters = value);
+		httpApiService.simulationRunning.subscribe(value => {
+			simulationRunning.set(value);
+		});
 		
 		// Fetch defaults immediately
 		try {
@@ -93,13 +52,7 @@
 	});
 
 	onMount(() => {
-		initializeServices();
-		
-		return () => {
-			if (currentService === 'websocket') {
-				websocketService.disconnect();
-			}
-		};
+		setupHttpStores();
 	});
 	
 	const toggleSidebar = () => {
@@ -145,14 +98,9 @@
 		};
 
 		console.log('🚀 Running simulation with parameters:', parameters);
-		console.log('📊 Arrival rates being sent:', $simulationParameters.arrivalRates);
 
 		try {
-			if (currentService === 'websocket' && connected) {
-				websocketService.runSimulation(parameters);
-			} else {
-				await httpApiService.runSimulation(parameters);
-			}
+			await httpApiService.runSimulation(parameters);
 		} catch (e) {
 			console.error('Simulation failed:', e);
 		}
@@ -167,19 +115,6 @@
 			}));
 		}
 	};
-
-	// Get simulation running state from current service
-	$effect(() => {
-		if (currentService === 'websocket') {
-			websocketService.simulationRunning.subscribe(value => {
-				simulationRunning.set(value);
-			});
-		} else {
-			httpApiService.simulationRunning.subscribe(value => {
-				simulationRunning.set(value);
-			});
-		}
-	});
 </script>
 
 <div id="sidebar" class="h-full fixed left-0 top-0 transition-all duration-300 flex flex-col shadow-2xl {isSidebarOpen ? 'w-96' : 'w-12'}" bind:this={sidebarElement}>
@@ -207,8 +142,8 @@
 				<!-- Connection Status -->
 				<div class="p-3 border-b border-zinc-700/50 bg-zinc-800/40">
 					<div class="flex items-center gap-2 text-sm">
-						<div class="w-2 h-2 rounded-full {connected ? 'bg-green-500' : 'bg-yellow-500'}"></div>
-						<span class="text-white/80">{currentService === 'websocket' ? 'WebSocket' : 'HTTP API'}: {status}</span>
+						<div class="w-2 h-2 rounded-full bg-green-500"></div>
+						<span class="text-white/80">API: {status}</span>
 					</div>
 					{#if error}
 						<div class="mt-2 text-xs text-red-400">{error}</div>

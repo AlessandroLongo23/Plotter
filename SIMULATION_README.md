@@ -1,13 +1,13 @@
 # Hospital Simulation Interface
 
-This project implements a complete hospital simulation system with a Python backend and Svelte frontend, connected via WebSocket for real-time parameter configuration and visualization.
+This project implements a complete hospital simulation system with a Python backend and Svelte frontend, using HTTP API for communication.
 
 ## Features
 
-### Backend (Python)
+### Backend (Python API)
 - Stochastic hospital simulation with multiple wards and patient types
 - Configurable parameters: bed distribution, arrival rates, length of stay
-- WebSocket server for real-time communication
+- HTTP API endpoints for simulation and default parameters
 - Event-based simulation with comprehensive logging
 
 ### Frontend (Svelte + p5.js)
@@ -19,37 +19,27 @@ This project implements a complete hospital simulation system with a Python back
 ## Setup and Installation
 
 ### Prerequisites
-- Python 3.7+
+- Python 3.9+ (for local development using vercel dev)
 - Node.js 18+
-- npm or yarn
+- npm
 
-### Python Dependencies
-```bash
-pip install websockets numpy
-```
-
-### Node.js Dependencies
+### Dependencies
 ```bash
 npm install
 ```
 
 ## Running the Application
 
-### Option 1: Run Everything at Once
+### Local Development
 ```bash
-npm start
+npm run vercel-dev
 ```
-This will start both the Python WebSocket server and the Svelte development server.
+This will start the Vercel development server which handles both the Svelte frontend and Python API functions.
 
-### Option 2: Run Separately
-Terminal 1 (Python server):
+### Production Build
 ```bash
-python start_server.py
-```
-
-Terminal 2 (Svelte frontend):
-```bash
-npm run dev
+npm run build
+npm run deploy
 ```
 
 ## Usage
@@ -66,7 +56,7 @@ In the sidebar, you can configure:
 ### 2. Running Simulations
 1. Adjust parameters using the sliders
 2. Click "Run Simulation" button
-3. Wait for the simulation to complete
+3. Wait for the simulation to complete (no mock data - real simulation runs)
 4. View results in the canvas
 
 ### 3. Visualization Controls
@@ -76,41 +66,48 @@ Once a simulation is complete:
 - **+/-**: Increase/decrease playback speed
 - **Mouse**: Click and drag to pan view
 
-### 4. Connection Status
-The sidebar shows connection status:
-- **Green dot**: Connected to Python server
-- **Red dot**: Disconnected (start the Python server)
+### 4. API Status
+The sidebar shows API status:
+- **Green dot**: API ready
 - **Status messages**: Real-time updates on simulation progress
 
 ## Architecture
 
-### WebSocket Communication
-The system uses WebSocket for bidirectional communication:
+### HTTP API Communication
+The system uses HTTP API endpoints:
 
-**Client → Server Messages:**
-- `get_defaults`: Request default parameters
-- `run_sim`: Start simulation with custom parameters
+**API Endpoints:**
+- `GET /api/defaults`: Get default parameters
+- `POST /api/simulate`: Run simulation with custom parameters
 
-**Server → Client Messages:**
-- `defaults`: Default parameter values
-- `info`: Status updates
-- `sim_complete`: Simulation results with event history
-- `error`: Error messages
+**Request/Response Format:**
+- Request: JSON with simulation parameters
+- Response: JSON with simulation results and event history
 
 ### Data Flow
-1. Frontend loads and connects to WebSocket server
-2. Server sends default parameters
-3. User adjusts parameters in UI
-4. User clicks "Run Simulation"
-5. Frontend sends parameters to server
-6. Server runs simulation and streams results back
-7. Frontend visualizes results in real-time
+1. Frontend loads and fetches default parameters from API
+2. User adjusts parameters in UI
+3. User clicks "Run Simulation"
+4. Frontend sends HTTP POST request with parameters
+5. Python API runs simulation and returns results
+6. Frontend visualizes results
+
+## Deployment
+
+### Local Development
+- Uses `vercel dev` to run both frontend and Python API functions locally
+- Same behavior as production environment
+
+### Production (Vercel)
+- Automatic deployment via `npm run deploy`
+- Python functions run as serverless functions
+- No additional server setup required
 
 ## Customization
 
 ### Adding New Parameters
-1. Update `problem.py` with new default values
-2. Modify `ws_server.py` to handle new parameters
+1. Update `api/problem.py` with new default values
+2. Modify `api/simulate.py` to handle new parameters
 3. Add UI controls in `Sidebar.svelte`
 4. Update visualization in `HospitalCanvas.svelte`
 
@@ -123,59 +120,51 @@ The system uses WebSocket for bidirectional communication:
 
 ### Common Issues
 
-**WebSocket Connection Failed:**
-- Ensure Python server is running: `python start_server.py`
-- Check if port 8765 is available
-- Verify Python dependencies are installed
+**API Connection Failed:**
+- Ensure you're running `npm run vercel-dev` for local development
+- Check browser console for error messages
+- Verify Python dependencies are available
 
 **Simulation Not Starting:**
 - Check browser console for JavaScript errors
 - Verify all parameters are within valid ranges
-- Ensure WebSocket connection is established (green dot in sidebar)
+- Check API status in the sidebar
 
 **Performance Issues:**
 - Reduce simulation time for faster processing
-- Lower visualization update frequency
 - Consider running simulations with smaller datasets
-
-### Debug Mode
-Enable debug logging by checking browser console and Python server output for detailed information about:
-- WebSocket messages
-- Simulation progress
-- Parameter validation
-- Error details
 
 ## Development
 
 ### File Structure
 ```
+api/
+├── simulate.py              # Simulation HTTP API endpoint
+├── defaults.py              # Default parameters API endpoint
+├── problem.py               # Problem configuration
+├── hospital.py              # Hospital simulation logic
+├── simulator.py             # Simulator classes
+└── ward.py                  # Ward management
+
 src/
 ├── lib/
 │   ├── components/
-│   │   ├── HospitalCanvas.svelte    # Main visualization
-│   │   ├── Sidebar.svelte           # Parameter controls
-│   │   └── ui/                      # UI components
+│   │   ├── HospitalCanvas.svelte  # Main visualization
+│   │   ├── Sidebar.svelte         # Parameter controls
+│   │   └── ui/                    # UI components
 │   ├── services/
-│   │   └── websocket.js             # WebSocket service
+│   │   └── http-api.js            # HTTP API service
 │   └── stores/
-│       └── hospital.js              # Data stores
+│       └── hospital.js            # Data stores
 ├── routes/
-│   └── (app)/hospital/+page.svelte  # Main page
-└── ...
-
-Stochastic-Simulation-Project-2/
-├── core/
-│   ├── ws_server.py                 # WebSocket server
-│   ├── main.py                      # Original simulation
-│   └── utils/                       # Simulation classes
+│   └── (app)/hospital/+page.svelte # Main page
 └── ...
 ```
 
-### Adding Features
-1. Extend the WebSocket protocol in `ws_server.py`
-2. Add UI controls in `Sidebar.svelte`
-3. Update visualization in `HospitalCanvas.svelte`
-4. Test with various parameter combinations
+### Development Commands
+- `npm run vercel-dev`: Start local development server
+- `npm run build`: Build for production
+- `npm run deploy`: Deploy to Vercel
 
 ## License
 This project is part of a stochastic simulation study and is intended for educational and research purposes. 

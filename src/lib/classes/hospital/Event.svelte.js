@@ -30,7 +30,6 @@ export class DischargeEvent extends Event {
     }
 
     resolve(hospital) {
-        console.log(this.patient_id, hospital.patients)
         let patient = hospital.patients.find(patient => patient.id === this.patient_id);
         hospital.dischargePatient(patient);
         this.resolved = true;

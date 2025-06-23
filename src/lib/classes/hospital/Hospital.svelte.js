@@ -22,7 +22,6 @@ export class Hospital {
     }
 
     dischargePatient(patient) {
-        console.log(patient)
         patient.bed.free();
         this.patients.splice(this.patients.indexOf(patient), 1);
     }

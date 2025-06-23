@@ -4,9 +4,9 @@
     import { controls } from '$lib/stores/plotter';
     import * as ls from 'lucide-svelte';
 
-    import { Renderer } from '$lib/classes/Renderer.svelte.js';
+    import { Renderer } from '$lib/classes/plotter/Renderer.svelte.js';
+    import { Grid } from '$lib/classes/plotter/Grid.svelte.js';
     import { Vector } from '$lib/classes/Vector.svelte.js';
-    import { Grid } from '$lib/classes/Grid.svelte.js';
 
     let {
         width = 600,

@@ -51,7 +51,7 @@ export class Simulator {
                 case 'Departure':
                 case 'Transfer':
                     this.events.push(new DischargeEvent(time, patient_id, disease, wardAllocation));
-                    break;
+                    break;v
             }
         }
 

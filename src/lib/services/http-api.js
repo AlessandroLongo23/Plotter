@@ -7,31 +7,13 @@ class HttpApiService {
         this.defaultParameters = writable(null);
         this.error = writable(null);
         this.status = writable('ready');
-        
-        this.baseUrl = this.getApiBaseUrl();
-    }
-
-    getApiBaseUrl() {
-        if (typeof window !== 'undefined') {
-            const hostname = window.location.hostname;
-            const isLocal = hostname === 'localhost' || hostname === '127.0.0.1';
-            
-            if (isLocal) {
-                // For local development, use the development API server
-                return 'http://localhost:3001/api';
-            } else {
-                // For production (Vercel), use the same domain
-                return '/api';
-            }
-        }
-        return '/api';
     }
 
     async fetchDefaults() {
         try {
             this.status.set('fetching defaults...');
             
-            const response = await fetch(`${this.baseUrl}/defaults`);
+            const response = await fetch('/api/defaults');
             
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
@@ -64,7 +46,7 @@ class HttpApiService {
                 stay_means: parameters.stayMeans
             };
 
-            const response = await fetch(`${this.baseUrl}/simulate`, {
+            const response = await fetch('/api/simulate', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -100,15 +82,6 @@ class HttpApiService {
             throw error;
         } finally {
             this.simulationRunning.set(false);
-        }
-    }
-
-    async checkHealth() {
-        try {
-            const response = await fetch(`${this.baseUrl}/defaults`);
-            return response.ok;
-        } catch (error) {
-            return false;
         }
     }
 }

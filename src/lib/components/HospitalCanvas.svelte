@@ -4,7 +4,6 @@
     import { controls } from '$lib/stores/plotter';
     import { Vector } from '$lib/classes/Vector.svelte.js';
     import { wards, simulationParameters } from '$lib/stores/hospital';
-    import { websocketService } from '$lib/services/websocket';
     import { httpApiService } from '$lib/services/http-api';
 
     import { Simulator } from '$lib/classes/hospital/Simulator.svelte.js';
@@ -30,20 +29,11 @@
     let simulationSpeed = $state(1);
     let hasSimulationData = $state(false);
 
-    // Subscribe to both services for simulation results
-    let websocketResults = websocketService.simulationResults;
+    // Subscribe to HTTP API service for simulation results
     let httpResults = httpApiService.simulationResults;
-    let websocketRunning = websocketService.simulationRunning;
     let httpRunning = httpApiService.simulationRunning;
 
-    // Watch for simulation results from either service
-    $effect(() => {
-        if ($websocketResults) {
-            console.log('Received WebSocket simulation results:', $websocketResults);
-            loadSimulationData($websocketResults);
-        }
-    });
-
+    // Watch for simulation results from HTTP API
     $effect(() => {
         if ($httpResults) {
             console.log('Received HTTP simulation results:', $httpResults);
@@ -232,7 +222,7 @@
             p5.push();
             p5.translate(0, -height);
             p5.scale(1, -1);
-            const isRunning = $websocketRunning || $httpRunning;
+            const isRunning = $httpRunning;
             
             let statusText = '';
             let color = p5.color('white');
