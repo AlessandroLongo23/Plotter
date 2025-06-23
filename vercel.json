@@ -5,7 +5,7 @@
     },
     "api/simulate.py": {
       "runtime": "python3.9",
-      "maxDuration": 300
+      "maxDuration": 60
     }
   },
   "routes": [
