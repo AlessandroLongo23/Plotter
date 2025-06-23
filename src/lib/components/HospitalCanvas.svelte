@@ -21,13 +21,13 @@
 
     let time = $state(0);
     let simulator = $state();
+    let startTime = $state(null);
 
     onMount(async () => {
         if (typeof window !== 'undefined') {
             p5 = (await import('p5')).default;
             myp5 = new p5(sketch, canvasContainer);
 
-            simulator = new Simulator();
             canvasElement = myp5;
             
             if (width && height && myp5) {
@@ -49,15 +49,17 @@
         }
     });
 
-	let sketch = function(p5) {
-        p5.setup = () => {
+	let sketch = async function(p5) {
+        p5.setup = async () => {
             p5.createCanvas(width, height);
             p5.colorMode(p5.HSB, 360, 100, 100);
             canvasElement = p5;
             p5.stroke(0);
             p5.strokeWeight(1 / $controls.targetZoom);
+            simulator = new Simulator();
+            await simulator.loadData('log.txt');
 
-            // simulator.loadData(data);
+            startTime = Date.now();
         }
 
         p5.draw = async () => {
@@ -65,7 +67,11 @@
             p5.translate(0, height);
             p5.scale(1, -1);
 
-            // simulator.update(time);
+            if (startTime !== null) {
+                time = (Date.now() - startTime) / 1000;
+            }
+
+            simulator.update(time);
             simulator.hospital.draw(p5);
         }
 

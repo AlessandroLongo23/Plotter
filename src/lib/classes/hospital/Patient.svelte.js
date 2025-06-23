@@ -1,36 +1,18 @@
-export const patientTypes = {
-    A: {
-        name: 'A',
-        color: 'red'
-    },
-    B: {
-        name: 'B',
-        color: 'blue'
-    },
-    C: {
-        name: 'C',
-        color: 'green'
-    },
-    D: {
-        name: 'D',
-        color: 'yellow'
-    },
-    E: {
-        name: 'E',
-        color: 'purple'
-    },
-    F: {
-        name: 'F',
-        color: 'orange'
-    }
-}
+import { Vector } from '$lib/classes/Vector.svelte.js';
+import { patientTypes } from '$lib/stores/hospital.js';
+import { fromHexToHsl } from '$lib/utils/color.svelte.js';
 
 export class Patient {
-    constructor(type) {
+    constructor(id, disease) {
+        this.id = id;
+        this.disease = disease.trim();
+
         this.pos = new Vector(0, 0);
-        this.type = type;
-        this.color = patientTypes[type].color;
-        this.name = patientTypes[type].name;
+        patientTypes.subscribe(types => {
+            this.color = types.find(t => t.disease === this.disease).color;
+            this.color = fromHexToHsl(this.color);
+        });
+        this.bed = null
     }
 
     assignToBed(bed) {

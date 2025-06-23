@@ -31,11 +31,11 @@
 
 	let bedsF = $derived.by(() => {
 		let bedsF = $wards.reduce((acc, ward) => {
-			if (ward.name === 'F') return acc;
+			if (ward.disease === 'F') return acc;
 			return acc + (ward.maxBeds - ward.assignedBeds);
 		}, 0);
 
-		$wards.find(ward => ward.name === 'F').assignedBeds = bedsF;
+		$wards.find(ward => ward.disease === 'F').assignedBeds = bedsF;
 		return bedsF;
 	});
 
@@ -87,11 +87,11 @@
 
                 <div class="p-3 flex-shrink-0 border-b border-zinc-700/50 bg-zinc-800/40 flex flex-col gap-4">
 					{#each $wards as ward}
-						{#if ward.name !== 'F'}
+						{#if ward.disease !== 'F'}
 							<div class="flex items-center justify-between">
 								<Slider
-									id={`ward-${ward.name}`}
-									label='Ward {ward.name}'
+									id={`ward-${ward.disease}`}
+									label='Ward {ward.disease}'
 									min={0}
 									max={ward.maxBeds}
 									bind:value={ward.assignedBeds}

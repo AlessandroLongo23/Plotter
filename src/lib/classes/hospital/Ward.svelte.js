@@ -3,8 +3,9 @@ import { Bed } from '$lib/classes/hospital/Bed.svelte.js';
 import { fromHexToHsl } from '$lib/utils/color.svelte.js';
 
 export class Ward {
-    constructor(pos, size, rotation, numBeds, color) {
+    constructor(disease, pos, size, rotation, numBeds, color) {
         this.pos = pos;
+        this.disease = disease;
         this.size = size;
         this.rotation = rotation
         this.numBeds = numBeds;
@@ -19,7 +20,7 @@ export class Ward {
         ));
     }
 
-    draw(p5) {
+    draw(p5, hospital) {
         p5.push();
         p5.rectMode(p5.CENTER);
         p5.rotate(this.rotation);
@@ -29,7 +30,7 @@ export class Ward {
         this.pos.x = (this.pos.x + p5.width) % p5.width;
         p5.rect(this.pos.x, this.pos.y, this.size.x, this.size.y, 10);
 
-        for (let bed of this.beds) bed.draw(p5);
+        for (let bed of this.beds) bed.draw(p5, hospital);
 
         p5.pop();
     }   
@@ -37,7 +38,6 @@ export class Ward {
     getBedPos(i) {
         let row = i % this.rows;
         let col = (i - row) / this.rows;
-        console.log(row, col);
 
         let off = new Vector(
             (col - this.cols / 2 + 0.5) * 24,
@@ -48,8 +48,10 @@ export class Ward {
     }
 
     addPatient(patient) {
-        let freeBeds = this.beds.filter(bed => !bed.patient);
-        if (freeBeds.length === 0) return;
+        let freeBeds = this.beds.filter(bed => bed.patient === null);
+        if (freeBeds.length === 0) {
+            return;
+        }
 
         let bed = freeBeds.pickRandom();
         patient.assignToBed(bed);
