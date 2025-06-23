@@ -1,17 +1,1 @@
-{
-  "functions": {
-    "api/defaults.py": {
-      "runtime": "@vercel/python"
-    },
-    "api/simulate.py": {
-      "runtime": "@vercel/python",
-      "maxDuration": 60
-    }
-  },
-  "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "/api/$1"
-    }
-  ]
-}
+{}
