@@ -1,6 +1,7 @@
 import { ArrivalEvent, DischargeEvent } from '$lib/classes/hospital/Event.svelte.js';
 
 import { Hospital } from '$lib/classes/hospital/Hospital.svelte.js';
+import { ConstructionIcon } from 'lucide-svelte';
 
 export class Simulator {
     constructor() {
@@ -34,24 +35,25 @@ export class Simulator {
         this.events = [];
         
         for (let eventData of eventHistory) {
-            if (!eventData.event || eventData.allocation === 'Rejected') continue;
+            if (!eventData.event || eventData.allocation === 'Rejected') {
+                continue;
+            }
             
             const event = eventData.event;
             const allocation = eventData.allocation;
             
             const time = parseFloat(event.time);
             const patient_id = parseInt(event.patient_id);
-            const disease = event.disease;
+            const disease = event.patient_disease;
             const wardAllocation = allocation.ward || allocation;
 
-            switch (event.type) {
+            switch (event.event_type) {
                 case 'Arrival':
                     this.events.push(new ArrivalEvent(time, patient_id, disease, wardAllocation));
                     break;
                 case 'Departure':
-                case 'Transfer':
                     this.events.push(new DischargeEvent(time, patient_id, disease, wardAllocation));
-                    break;v
+                    break;
             }
         }
 

@@ -81,49 +81,52 @@ def parse_parameters(data: dict) -> tuple:
     
     return bed_distribution, arrival_rates, stay_means
 
+def run_simulation_from_data(data: dict) -> dict:
+    """Takes simulation data, runs the simulation, and returns results."""
+    # Extract simulation time
+    time = data.get("time", 365)
+    
+    # Parse custom parameters
+    bed_distribution, arrival_rates, stay_means = parse_parameters(data)
+    
+    # Create hospital and simulator with custom parameters
+    hospital = Hospital(
+        relocation_matrix=Data.transition_matrix, 
+        bed_distribution=bed_distribution
+    )
+    simulator = Simulator(
+        hospital, 
+        arrival_rates=arrival_rates, 
+        stay_means=stay_means
+    )
+    
+    # Run simulation
+    event_history = simulator.run(time, log=False, export=False)
+    event_history = history_to_json(event_history) if event_history is not None else None
+    
+    # Prepare result with simulation data
+    return {
+        "success": True,
+        "total_events": len(event_history) if event_history else 0,
+        "event_history": event_history,
+        "parameters": {
+            "time": time,
+            "bed_distribution": {k.name: v for k, v in bed_distribution.items()},
+            "arrival_rates": {k.name: v for k, v in arrival_rates.items()},
+            "stay_means": {k.name: v for k, v in stay_means.items()}
+        }
+    }
+
 class handler(BaseHTTPRequestHandler):
     def do_POST(self):
         try:
             # Get content length and read request body
             content_length = int(self.headers.get('Content-Length', 0))
             post_data = self.rfile.read(content_length)
-            
-            # Parse JSON data
             data = json.loads(post_data.decode('utf-8'))
             
-            # Extract simulation time
-            time = data.get("time", 365)
-            
-            # Parse custom parameters
-            bed_distribution, arrival_rates, stay_means = parse_parameters(data)
-            
-            # Create hospital and simulator with custom parameters
-            hospital = Hospital(
-                relocation_matrix=Data.transition_matrix, 
-                bed_distribution=bed_distribution
-            )
-            simulator = Simulator(
-                hospital, 
-                arrival_rates=arrival_rates, 
-                stay_means=stay_means
-            )
-            
-            # Run simulation
-            event_history = simulator.run(time, log=False, export=False)
-            event_history = history_to_json(event_history) if event_history is not None else None
-            
-            # Prepare result with simulation data
-            result = {
-                "success": True,
-                "total_events": len(event_history) if event_history else 0,
-                "event_history": event_history,
-                "parameters": {
-                    "time": time,
-                    "bed_distribution": {k.name: v for k, v in bed_distribution.items()},
-                    "arrival_rates": {k.name: v for k, v in arrival_rates.items()},
-                    "stay_means": {k.name: v for k, v in stay_means.items()}
-                }
-            }
+            # Run simulation with parsed data
+            result = run_simulation_from_data(data)
             
             # Send response
             self.send_response(200)
@@ -151,4 +154,19 @@ class handler(BaseHTTPRequestHandler):
         self.send_header('Access-Control-Allow-Origin', '*')
         self.send_header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
         self.send_header('Access-Control-Allow-Headers', 'Content-Type')
-        self.end_headers() 
+        self.end_headers()
+
+if __name__ == "__main__":
+    """
+    Allows the script to be run directly from the command line.
+    Reads JSON from stdin, runs simulation, and prints results to stdout.
+    This is used by the local dev-server.js.
+    """
+    try:
+        input_data = sys.stdin.read()
+        data = json.loads(input_data)
+        result = run_simulation_from_data(data)
+        print(json.dumps(result))
+    except Exception as e:
+        error_response = {"success": False, "error": f"Error in command-line execution: {str(e)}"}
+        print(json.dumps(error_response)) 

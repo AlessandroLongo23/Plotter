@@ -44,15 +44,16 @@ class Simulator:
         self.arrival_rate       = arrival_rates
         self.stay_means         = stay_means
 
-    def init(self):
+    def init(self, store_history=True):
         self._clock                 = 0
         self._patient_counter       = 0
         self._event_queue           = []
-        self._event_history         = []
+        self._event_history         = [] if store_history else None
+        self._store_history         = store_history
         self.hospital.initialize()
 
-    def run(self, time=365.0, log=False, export=False) -> Optional[EventHistory]:
-        self.init()
+    def run(self, time=365.0, log=False, export=False, store_history=True) -> Optional[EventHistory]:
+        self.init(store_history)
 
         try:
             self._run_simulation_loop(time)
@@ -76,7 +77,8 @@ class Simulator:
             else:
                 raise Exception(f"Unexpected Event: {event}")
 
-            self._event_history.append((event, allocation))
+            if self._store_history:
+                self._event_history.append((event, allocation))
 
     def _create_arrival(self, disease: Disease):
         time = self._clock + np.random.exponential(1.0 / self.arrival_rate[disease])

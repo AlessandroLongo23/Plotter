@@ -22,7 +22,7 @@
 	let status = $state('ready');
 	let error = $state(null);
 	let defaultParameters = $state(null);
-	
+
 	const setupHttpStores = async () => {
 		// Subscribe to HTTP stores
 		httpApiService.status.subscribe(value => status = value);
@@ -81,7 +81,7 @@
 		return $wards.reduce((acc, ward) => {
 			return acc + ward.maxBeds;
 		}, 0);
-	})
+	});
 
 	const runSimulation = async () => {
 		// Prepare bed distribution from wards
@@ -100,7 +100,7 @@
 		console.log('🚀 Running simulation with parameters:', parameters);
 
 		try {
-			await httpApiService.runSimulation(parameters);
+				await httpApiService.runSimulation(parameters);
 		} catch (e) {
 			console.error('Simulation failed:', e);
 		}

@@ -59,11 +59,6 @@
     });
 
     const loadSimulationData = async (data) => {
-        console.log('📥 Received simulation data:', data);
-        console.log('📊 Event history length:', data.event_history?.length);
-        console.log('⏱️ Simulation parameters received:', data.parameters);
-        
-        // Analyze event distribution for debugging
         if (data.event_history) {
             const eventsByDisease = {};
             const arrivalsByDisease = {};
@@ -82,14 +77,6 @@
                     arrivalsByDisease[disease]++;
                 }
             });
-            
-            console.log('📈 Events by disease:', eventsByDisease);
-            console.log('🏥 Arrivals by disease:', arrivalsByDisease);
-            console.log('📅 Arrivals per day by disease:');
-            Object.keys(arrivalsByDisease).forEach(disease => {
-                const arrivalsPerDay = arrivalsByDisease[disease] / (data.parameters?.time || 365);
-                console.log(`   ${disease}: ${arrivalsPerDay.toFixed(2)} arrivals/day (expected: ${data.parameters?.arrival_rates?.[disease] || 'unknown'})`);
-            });
         }
 
         simulationData = data;
@@ -99,10 +86,8 @@
         prevTime = Date.now();
 
         if (simulator) {
-            // Reset simulator before loading new data
             simulator.reset();
             
-            // Load the new simulation data
             await simulator.loadFromEventHistory(data.event_history);
             updateSimulatorWithCurrentParameters();
         }
@@ -291,7 +276,7 @@
                         simulator.reset();
                         updateSimulatorWithCurrentParameters();
                     }
-                } else if (p5.key === '+' || p5.key === '=') {
+                } else if (p5.key === '+') {
                     // Increase speed
                     simulationSpeed = Math.min(simulationSpeed * 2, 16);
                 } else if (p5.key === '-') {

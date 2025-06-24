@@ -1,4 +1,8 @@
 import { writable } from 'svelte/store';
+import { dev } from '$app/environment';
+
+// Use the local dev server in development, otherwise use the relative path for Vercel
+const base = dev ? 'http://localhost:3001' : '';
 
 class HttpApiService {
     constructor() {
@@ -13,10 +17,11 @@ class HttpApiService {
         try {
             this.status.set('fetching defaults...');
             
-            const response = await fetch('/api/defaults');
+            const response = await fetch(`${base}/api/defaults`);
             
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+                const errorText = await response.text();
+                throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
             }
             
             const data = await response.json();
@@ -46,7 +51,7 @@ class HttpApiService {
                 stay_means: parameters.stayMeans
             };
 
-            const response = await fetch('/api/simulate', {
+            const response = await fetch(`${base}/api/simulate`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
@@ -55,7 +60,8 @@ class HttpApiService {
             });
 
             if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
+                const errorText = await response.text();
+                throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
             }
 
             const data = await response.json();
