@@ -4,12 +4,13 @@
 
 	import { wards, simulationParameters, simulationRunning } from '$lib/stores/hospital';
 	import { httpApiService } from '$lib/services/http-api';
+	import { simulationPlaybackState, simulator } from '$lib/stores/simulation';
+	import { sidebarSections } from '$lib/stores/sidebar';
 
-	import Checkbox from '$lib/components/ui/Checkbox.svelte';
 	import Slider from '$lib/components/ui/Slider.svelte';
-	import Toggle from '$lib/components/ui/Toggle.svelte';
 	import Button from '$lib/components/ui/Button.svelte';
-	import Input from '$lib/components/ui/Input.svelte';
+	import CollapsibleSection from '$lib/components/ui/CollapsibleSection.svelte';
+	import SimulationControls from '$lib/components/SimulationControls.svelte';
 
 	let {
 		isSidebarOpen = $bindable(true),
@@ -119,11 +120,38 @@
 			}));
 		}
 	}
+
+	const handleReset = () => {
+        if ($simulationPlaybackState.hasSimulationData) {
+            $simulationPlaybackState.time = 0;
+            $simulationPlaybackState.prevTime = Date.now();
+            if ($simulator) {
+                $simulator.reset();
+            }
+        }
+    };
+
+    const handlePlayPause = () => {
+        if ($simulationPlaybackState.hasSimulationData) {
+            $simulationPlaybackState.isPlaying = !$simulationPlaybackState.isPlaying;
+            if ($simulationPlaybackState.isPlaying && $simulationPlaybackState.prevTime === null) {
+                $simulationPlaybackState.prevTime = Date.now();
+            } else if ($simulationPlaybackState.isPlaying) {
+                $simulationPlaybackState.prevTime = Date.now();
+            }
+        }
+    };
+
+    const handleSpeedChange = (newSpeed) => {
+        $simulationPlaybackState.speed = newSpeed;
+    };
+
+    const maxTime = $derived($simulationParameters.time * 24 * 3600);
 </script>
 
 <div id="sidebar" class="h-full fixed left-0 top-0 transition-all duration-300 flex flex-col shadow-2xl {isSidebarOpen ? 'w-96' : 'w-12'}" bind:this={sidebarElement}>
-	<div class="bg-zinc-800/90 backdrop-blur-sm text-white h-full overflow-hidden flex flex-col border-r border-zinc-700/50">
-		<div class="p-3 flex items-center justify-between border-b border-zinc-700/50 flex-shrink-0 bg-zinc-900/30">
+	<div class="bg-zinc-800/90 backdrop-blur-sm text-white h-full overflow-hidden flex flex-col border-r border-zinc-700/80">
+		<div class="p-3 flex items-center justify-between border-b border-zinc-700/80 flex-shrink-0 bg-zinc-900/30">
 			{#if isSidebarOpen}
 				<h2 class="text-sm font-medium text-white/90 uppercase tracking-wider">Hospital Simulation</h2>
 			{/if}
@@ -143,24 +171,11 @@
 		
 		{#if isSidebarOpen}
 			<div class="flex-1 overflow-y-auto">
-				<!-- Connection Status -->
-				<div class="p-3 border-b border-zinc-700/50 bg-zinc-800/40">
-					<div class="flex items-center gap-2 text-sm">
-						<div class="w-2 h-2 rounded-full bg-green-500"></div>
-						<span class="text-white/80">API: {status}</span>
-					</div>
-					{#if error}
-						<div class="mt-2 text-xs text-red-400">{error}</div>
-					{/if}
-				</div>
-
-				<!-- Simulation Controls -->
-				<div class="p-3 border-b border-zinc-700/50 bg-zinc-800/40">
-					<div class="flex items-center justify-between mb-3">
-						<h3 class="text-sm font-medium text-white/90 uppercase tracking-wider">Simulation</h3>
-					</div>
-					
-					<div class="space-y-3">
+				<CollapsibleSection 
+					title="Simulation Setup" 
+					bind:isOpen={$sidebarSections.simulation}
+				>
+					{#snippet children()}
 						<Slider
 							id="sim-time"
 							label="Simulation Time (days)"
@@ -182,22 +197,16 @@
 								Run Simulation
 							{/if}
 						</Button>
-					</div>
-				</div>
+					{/snippet}
+				</CollapsibleSection>
 
-				<!-- Ward Configuration -->
-				<div class="p-3 border-b border-zinc-700/50 bg-zinc-800/40">
-					<div class="flex items-center justify-between mb-3">
-						<h3 class="text-sm font-medium text-white/90 uppercase tracking-wider">Ward Beds</h3>
-						<button
-							class="p-1 rounded-md hover:bg-zinc-700/70 transition-all text-white/80 hover:text-white/100 cursor-pointer"
-							onclick={resetBeds}
-						>
-							<ls.RefreshCcw size={16} />
-						</button>
-					</div>
-
-					<div class="space-y-3">
+				<!-- Ward Beds Section -->
+				<CollapsibleSection 
+					title="Ward Beds" 
+					bind:isOpen={$sidebarSections.wardBeds}
+					onReset={resetBeds}
+				>
+					{#snippet children()}
 						{#each $wards as ward}
 							{#if ward.disease !== 'F'}
 								<Slider
@@ -217,22 +226,16 @@
 							max={totalBeds}
 							value={bedsF}
 						/>
-					</div>
-				</div>
+					{/snippet}
+				</CollapsibleSection>
 
-				<!-- Arrival Rates -->
-				<div class="p-3 border-b border-zinc-700/50 bg-zinc-800/40">
-					<div class="flex items-center justify-between mb-3">
-						<h3 class="text-sm font-medium text-white/90 uppercase tracking-wider">Arrival Rates</h3>
-						<button
-							class="p-1 rounded-md hover:bg-zinc-700/70 transition-all text-white/80 hover:text-white/100 cursor-pointer"
-							onclick={resetArrivalRates}
-						>
-							<ls.RefreshCcw size={16} />
-						</button>
-					</div>
-
-					<div class="space-y-3">
+				<!-- Arrival Rates Section -->
+				<CollapsibleSection 
+					title="Arrival Rates" 
+					bind:isOpen={$sidebarSections.arrivalRates}
+					onReset={resetArrivalRates}
+				>
+					{#snippet children()}
 						{#each Object.keys($simulationParameters.arrivalRates) as disease}
 							<Slider
 								id={`arrival-${disease}`}
@@ -243,22 +246,16 @@
 								bind:value={$simulationParameters.arrivalRates[disease]}
 							/>
 						{/each}
-					</div>
-				</div>
+					{/snippet}
+				</CollapsibleSection>
 
-				<!-- Stay Means -->
-				<div class="p-3 bg-zinc-800/40">
-					<div class="flex items-center justify-between mb-3">
-						<h3 class="text-sm font-medium text-white/90 uppercase tracking-wider">Length of Stay</h3>
-						<button
-							class="p-1 rounded-md hover:bg-zinc-700/70 transition-all text-white/80 hover:text-white/100 cursor-pointer"
-							onclick={resetStayMeans}
-						>
-							<ls.RefreshCcw size={16} />
-						</button>
-					</div>
-					
-					<div class="space-y-3">
+				<!-- Length of Stay Section -->
+				<CollapsibleSection 
+					title="Length of Stay" 
+					bind:isOpen={$sidebarSections.lengthOfStay}
+					onReset={resetStayMeans}
+				>
+					{#snippet children()}
 						{#each Object.keys($simulationParameters.stayMeans) as disease}
 							<Slider
 								id={`stay-${disease}`}
@@ -269,31 +266,22 @@
 								bind:value={$simulationParameters.stayMeans[disease]}
 							/>
 						{/each}
+					{/snippet}
+				</CollapsibleSection>
+			</div>
+
+			<!-- Fixed Simulation Controls at Bottom -->
+			{#if $simulationPlaybackState.hasSimulationData}
+				<div class="border-t border-zinc-700/80 bg-zinc-900/40 backdrop-blur-sm flex-shrink-0">
+					<div class="p-3">
+						<SimulationControls
+							onReset={handleReset}
+							onPlayPause={handlePlayPause}
+							onSpeedChange={handleSpeedChange}
+						/>
 					</div>
 				</div>
-			</div>
+			{/if}
 		{/if}
 	</div>
-</div> 
-
-<style>
-	.sticky-header {
-		position: sticky;
-		top: 0;
-		z-index: 10;
-		transition: all 0.2s ease;
-	}
-	
-	.sticky-header.scrolling {
-		box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-	}
-	
-	.group-indicator {
-		padding: 0.25rem 0.5rem;
-		margin-top: 0.5rem;
-		background-color: rgba(39, 39, 42, 0.5);
-		border-radius: 0.25rem;
-		transition: all 0.15s ease;
-		border: 1px solid rgba(63, 63, 70, 0.3);
-	}
-</style>
+</div>
