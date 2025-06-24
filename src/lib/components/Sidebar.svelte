@@ -11,6 +11,9 @@
 	import Button from '$lib/components/ui/Button.svelte';
 	import CollapsibleSection from '$lib/components/ui/CollapsibleSection.svelte';
 	import SimulationControls from '$lib/components/SimulationControls.svelte';
+	import TimeSeriesPlot from '$lib/components/TimeSeriesPlot.svelte';
+	import StackedBarPlot from '$lib/components/StackedBarPlot.svelte';
+	import Tabs from '$lib/components/ui/Tabs.svelte';
 
 	let {
 		isSidebarOpen = $bindable(true),
@@ -67,6 +70,12 @@
 	let totalBeds = $derived.by(() => {
 		return $wards.reduce((acc, ward) => {
 			return acc + ward.maxBeds;
+		}, 0);
+	});
+
+	let maxBeds = $derived.by(() => {
+		return $wards.reduce((max, ward) => {
+			return Math.max(max, ward.maxBeds);
 		}, 0);
 	});
 
@@ -147,6 +156,48 @@
     };
 
     const maxTime = $derived($simulationParameters.time * 24 * 3600);
+	
+	let urgencyHistoryData = $derived.by(() => {
+		if ($simulationPlaybackState.isPlaying) {
+			if (!$simulator) 
+				return [];
+
+			return ['A', 'B', 'C', 'D', 'E', 'F']
+				.map(disease => $simulator.hospital.metrics.urgencyHistory
+				.filter(data => data.disease === disease)
+				.map(data => ({x: data.time, y: data.urgency})));
+		}
+	});
+
+	let acceptanceHistoryData = $derived.by(() => {
+		if ($simulationPlaybackState.isPlaying) {
+			if (!$simulator) 
+				return [];
+
+			return ['A', 'B', 'C', 'D', 'E', 'F']
+				.map(disease => $simulator.hospital.metrics.acceptanceHistory
+				.filter(data => data.disease === disease)
+				.map(data => ({x: data.time, y: data.acceptance})));
+		}
+	});
+
+	let bedDistributionData = $derived.by(() => {
+		if ($simulationPlaybackState.isPlaying && $simulator) {
+			return $simulator.hospital.wards.map(ward => {
+				const counts = { ward: ward.disease };
+				const allDiseases = ['A', 'B', 'C', 'D', 'E', 'F'];
+				allDiseases.forEach(d => counts[d] = 0);
+
+				ward.beds.forEach(bed => {
+					if (bed.patient) {
+						counts[bed.patient.disease]++;
+					}
+				});
+				return counts;
+			});
+		}
+		return [];
+	});
 </script>
 
 <div id="sidebar" class="h-full fixed left-0 top-0 transition-all duration-300 flex flex-col shadow-2xl {isSidebarOpen ? 'w-96' : 'w-12'}" bind:this={sidebarElement}>
@@ -170,104 +221,159 @@
 		</div>
 		
 		{#if isSidebarOpen}
-			<div class="flex-1 overflow-y-auto">
-				<CollapsibleSection 
-					title="Simulation Setup" 
-					bind:isOpen={$sidebarSections.simulation}
-				>
-					{#snippet children()}
-						<Slider
-							id="sim-time"
-							label="Simulation Time (days)"
-							min={30}
-							max={3650}
-							bind:value={$simulationParameters.time}
-						/>
-						
-						<Button 
-							onclick={runSimulation}
-							disabled={$simulationRunning}
-							class="w-full {$simulationRunning ? 'bg-zinc-600' : 'bg-blue-600 hover:bg-blue-700'}"
+			<div class="flex-1 overflow-hidden">
+				<Tabs tabs={['Controls', 'Stats']}>
+					<div slot="tab-0" class="p-2">
+						<CollapsibleSection 
+							title="Simulation Setup" 
+							bind:isOpen={$sidebarSections.simulation}
 						>
-							{#if $simulationRunning}
-								<ls.Loader2 size={16} class="animate-spin mr-2" />
-								Running...
-							{:else}
-								<ls.Play size={16} class="mr-2" />
-								Run Simulation
-							{/if}
-						</Button>
-					{/snippet}
-				</CollapsibleSection>
-
-				<!-- Ward Beds Section -->
-				<CollapsibleSection 
-					title="Ward Beds" 
-					bind:isOpen={$sidebarSections.wardBeds}
-					onReset={resetBeds}
-				>
-					{#snippet children()}
-						{#each $wards as ward}
-							{#if ward.disease !== 'F'}
+							{#snippet children()}
 								<Slider
-									id={`ward-${ward.disease}`}
-									label='Ward {ward.disease}'
-									min={0}
-									max={ward.maxBeds}
-									bind:value={ward.assignedBeds}
+									id="sim-time"
+									label="Simulation Time (days)"
+									min={30}
+									max={3650}
+									bind:value={$simulationParameters.time}
 								/>
-							{/if}
-						{/each}
-						<Slider
-							id="ward-F"
-							label="Ward F (Auto)"
-							min={0}
-							disabled={true}
-							max={totalBeds}
-							value={bedsF}
-						/>
-					{/snippet}
-				</CollapsibleSection>
+								
+								<Button 
+									onclick={runSimulation}
+									disabled={$simulationRunning}
+									class="w-full {$simulationRunning ? 'bg-zinc-600' : 'bg-blue-600 hover:bg-blue-700'}"
+								>
+									{#if $simulationRunning}
+										<ls.Loader2 size={16} class="animate-spin mr-2" />
+										Running...
+									{:else}
+										<ls.Play size={16} class="mr-2" />
+										Run Simulation
+									{/if}
+								</Button>
+							{/snippet}
+						</CollapsibleSection>
 
-				<!-- Arrival Rates Section -->
-				<CollapsibleSection 
-					title="Arrival Rates" 
-					bind:isOpen={$sidebarSections.arrivalRates}
-					onReset={resetArrivalRates}
-				>
-					{#snippet children()}
-						{#each Object.keys($simulationParameters.arrivalRates) as disease}
-							<Slider
-								id={`arrival-${disease}`}
-								label='Disease {disease} (patients/day)'
-								min={0}
-								max={30}
-								step={0.1}
-								bind:value={$simulationParameters.arrivalRates[disease]}
-							/>
-						{/each}
-					{/snippet}
-				</CollapsibleSection>
+						<CollapsibleSection 
+							title="Ward Beds" 
+							bind:isOpen={$sidebarSections.wardBeds}
+							onReset={resetBeds}
+						>
+							{#snippet children()}
+								{#each $wards as ward}
+									{#if ward.disease !== 'F'}
+										<Slider
+											id={`ward-${ward.disease}`}
+											label='Ward {ward.disease}'
+											min={0}
+											max={ward.maxBeds}
+											bind:value={ward.assignedBeds}
+										/>
+									{/if}
+								{/each}
+								<Slider
+									id="ward-F"
+									label="Ward F (Auto)"
+									min={0}
+									disabled={true}
+									max={totalBeds}
+									value={bedsF}
+								/>
+							{/snippet}
+						</CollapsibleSection>
 
-				<!-- Length of Stay Section -->
-				<CollapsibleSection 
-					title="Length of Stay" 
-					bind:isOpen={$sidebarSections.lengthOfStay}
-					onReset={resetStayMeans}
-				>
-					{#snippet children()}
-						{#each Object.keys($simulationParameters.stayMeans) as disease}
-							<Slider
-								id={`stay-${disease}`}
-								label='Disease {disease} (days)'
-								min={0.1}
-								max={10}
-								step={0.1}
-								bind:value={$simulationParameters.stayMeans[disease]}
-							/>
-						{/each}
-					{/snippet}
-				</CollapsibleSection>
+						<!-- Arrival Rates Section -->
+						<CollapsibleSection 
+							title="Arrival Rates" 
+							bind:isOpen={$sidebarSections.arrivalRates}
+							onReset={resetArrivalRates}
+						>
+							{#snippet children()}
+								{#each Object.keys($simulationParameters.arrivalRates) as disease}
+									<Slider
+										id={`arrival-${disease}`}
+										label='Disease {disease} (patients/day)'
+										min={0}
+										max={30}
+										step={0.1}
+										bind:value={$simulationParameters.arrivalRates[disease]}
+									/>
+								{/each}
+							{/snippet}
+						</CollapsibleSection>
+
+						<!-- Length of Stay Section -->
+						<CollapsibleSection 
+							title="Length of Stay" 
+							bind:isOpen={$sidebarSections.lengthOfStay}
+							onReset={resetStayMeans}
+						>
+							{#snippet children()}
+								{#each Object.keys($simulationParameters.stayMeans) as disease}
+									<Slider
+										id={`stay-${disease}`}
+										label='Disease {disease} (days)'
+										min={0.1}
+										max={10}
+										step={0.1}
+										bind:value={$simulationParameters.stayMeans[disease]}
+									/>
+								{/each}
+							{/snippet}
+						</CollapsibleSection>
+					</div>
+
+					<div slot="tab-1" class="p-2">
+						<CollapsibleSection 
+							title="Urgency History" 
+							bind:isOpen={$sidebarSections.urgencyHistory}
+						>
+							{#snippet children()}
+								<TimeSeriesPlot 
+									width={340}
+									height={250}
+									data={urgencyHistoryData}
+									windowSize={60}
+									avgWindowSize={10}
+									showRawData={false}
+									legend={false}
+									cumulative={true}
+								/>
+							{/snippet}
+						</CollapsibleSection>
+
+						<CollapsibleSection 
+							title="Acceptance History" 
+							bind:isOpen={$sidebarSections.acceptanceHistory}
+						>
+							{#snippet children()}
+								<TimeSeriesPlot 
+									width={340}
+									height={250}
+									data={acceptanceHistoryData}
+									windowSize={60}
+									avgWindowSize={100}
+									showRawData={false}
+									legend={false}
+									cumulative={false}
+								/>
+							{/snippet}
+						</CollapsibleSection>
+
+						<CollapsibleSection
+							title="Bed Distribution"
+							bind:isOpen={$sidebarSections.bedDistribution}
+						>
+							{#snippet children()}
+								<StackedBarPlot
+									data={bedDistributionData}
+									width={340}
+									height={250}
+									maxHeight={maxBeds}
+								/>
+							{/snippet}
+						</CollapsibleSection>
+					</div>
+				</Tabs>
 			</div>
 
 			<!-- Fixed Simulation Controls at Bottom -->

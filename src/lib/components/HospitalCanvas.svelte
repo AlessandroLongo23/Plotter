@@ -125,15 +125,13 @@
 
         p5.draw = async () => {
             p5.background(0, 0, 12);
-            p5.translate(0, height);
-            p5.scale(1, -1);
 
             if ($simulationPlaybackState.hasSimulationData && $simulator) {
                 if ($simulationPlaybackState.isPlaying && $simulationPlaybackState.prevTime !== null) {
                     $simulationPlaybackState.time += (Date.now() - $simulationPlaybackState.prevTime) / 1000 * $simulationPlaybackState.speed;
                     $simulationPlaybackState.time = Math.min($simulationPlaybackState.time, $simulationPlaybackState.maxTime);
                     $simulationPlaybackState.prevTime = Date.now();
-                }
+                }   
 
                 $simulator.update($simulationPlaybackState.time);
                 $simulator.hospital.draw(p5);

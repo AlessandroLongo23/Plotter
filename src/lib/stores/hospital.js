@@ -9,34 +9,42 @@ export const wards = writable([
         color: '#ff0000',
         pos: new Vector(250, 150),
         size: new Vector(400, 200),
-        rotation: 0
+        rotation: 0,
+        relocationsProbabilities: {A: 0.00, B: 0.05, C: 0.10, D: 0.05, E: 0.80, F: 0.00},
+        urgency: 7,
     },
     {
         disease: 'B',
         assignedBeds: 40,
         maxBeds: 40,
-        color: '#0000ff',
+        color: '#00ff00',
         pos: new Vector(250, 400),
         size: new Vector(400, 200),
-        rotation: 0
+        rotation: 0,
+        relocationsProbabilities: {A: 0.20, B: 0.00, C: 0.50, D: 0.15, E: 0.15, F: 0.00},
+        urgency: 5,
     },
     {
         disease: 'C',
         assignedBeds: 30,
         maxBeds: 30,
-        color: '#00ff00',
+        color: '#0000ff',
         pos: new Vector(250, 650),
         size: new Vector(400, 200),
-        rotation: 0
+        rotation: 0,
+        relocationsProbabilities: {A: 0.30, B: 0.20, C: 0.00, D: 0.20, E: 0.30, F: 0.00},
+        urgency: 2,
     },
     {
         disease: 'D',
         assignedBeds: 20,
         maxBeds: 20,
-        color: '#ffff00',
+        color: '#00ffff',
         pos: new Vector(850, 150),
         size: new Vector(400, 200),
-        rotation: 0
+        rotation: 0,
+        relocationsProbabilities: {A: 0.35, B: 0.30, C: 0.05, D: 0.00, E: 0.30, F: 0.00},
+        urgency: 10,
     },
     {
         disease: 'E',
@@ -45,16 +53,20 @@ export const wards = writable([
         color: '#ff00ff',
         pos: new Vector(850, 400),
         size: new Vector(400, 200),
-        rotation: 0
+        rotation: 0,
+        relocationsProbabilities: {A: 0.20, B: 0.10, C: 0.60, D: 0.10, E: 0.00, F: 0.00},
+        urgency: 5,
     },
     {
         disease: 'F',
         assignedBeds: 0,
         maxBeds: null,
-        color: '#00ffff',
+        color: '#ffff00',
         pos: new Vector(850, 650),
         size: new Vector(400, 200),
-        rotation: 0
+        rotation: 0,
+        relocationsProbabilities: {A: 0.20, B: 0.20, C: 0.20, D: 0.20, E: 0.20, F: 0.00},
+        urgency: 0,
     }
 ])
 
@@ -65,15 +77,15 @@ export const patientTypes = writable([
     },  
     {
         disease: 'B',
-        color: '#0000ff'
-    },
-    {
-        disease: 'C',
         color: '#00ff00'
     },
     {
+        disease: 'C',
+        color: '#0000ff'
+    },
+    {
         disease: 'D',
-        color: '#ffff00'
+        color: '#00ffff'
     },
     {
         disease: 'E',
@@ -81,7 +93,7 @@ export const patientTypes = writable([
     },
     {
         disease: 'F',
-        color: '#00ffff'
+        color: '#ffff00'
     }
 ])
 

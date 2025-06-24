@@ -3,7 +3,7 @@
 
     import Sidebar from '$lib/components/Sidebar.svelte';
     import HospitalCanvas from '$lib/components/HospitalCanvas.svelte';
-
+    
     let sidebarElement = $state('');
     let sidebarWidth = $state(100);
     let isSidebarOpen = $state(true);

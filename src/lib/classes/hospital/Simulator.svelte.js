@@ -1,7 +1,7 @@
-import { ArrivalEvent, DischargeEvent } from '$lib/classes/hospital/Event.svelte.js';
+import { ArrivalEvent, DischargeEvent, RejectionEvent } from '$lib/classes/hospital/Event.svelte.js';
 
 import { Hospital } from '$lib/classes/hospital/Hospital.svelte.js';
-import { ConstructionIcon } from 'lucide-svelte';
+import { Metrics } from '$lib/classes/hospital/Metrics.svelte.js';
 
 export class Simulator {
     constructor() {
@@ -17,7 +17,6 @@ export class Simulator {
             const text = await response.text();
             this.data = text.split('\n')
                 .filter(line => line.trim() !== '')
-                .filter(line => !line.includes('REJECTED'))
                 .slice(1);
             this.processData();
         } catch (error) {
@@ -25,7 +24,6 @@ export class Simulator {
         }
     }
 
-    // New method to load data from API event history
     async loadFromEventHistory(eventHistory) {
         if (!eventHistory || !Array.isArray(eventHistory)) {
             console.error('Invalid event history data');
@@ -35,21 +33,22 @@ export class Simulator {
         this.events = [];
         
         for (let eventData of eventHistory) {
-            if (!eventData.event || eventData.allocation === 'Rejected') {
-                continue;
-            }
-            
             const event = eventData.event;
             const allocation = eventData.allocation;
-            
+
             const time = parseFloat(event.time);
             const patient_id = parseInt(event.patient_id);
             const disease = event.patient_disease;
-            const wardAllocation = allocation.ward || allocation;
+            const wardAllocation = allocation;
+            const rejected = allocation === 'Rejected';
 
             switch (event.event_type) {
                 case 'Arrival':
-                    this.events.push(new ArrivalEvent(time, patient_id, disease, wardAllocation));
+                    if (rejected) {
+                        this.events.push(new RejectionEvent(time, patient_id, disease, wardAllocation));
+                    } else {
+                        this.events.push(new ArrivalEvent(time, patient_id, disease, wardAllocation));
+                    }
                     break;
                 case 'Departure':
                     this.events.push(new DischargeEvent(time, patient_id, disease, wardAllocation));
@@ -57,27 +56,22 @@ export class Simulator {
             }
         }
 
-        // Reset hospital state
         this.hospital = new Hospital();
         
-        // Sort events by time
         this.events.sort((a, b) => a.time - b.time);
         
         console.log(`Loaded ${this.events.length} events from API data`);
     }
 
-    // New method to update parameters dynamically
     updateParameters(parameters) {
         if (!parameters) return;
         
         this.currentParameters = parameters;
         
-        // Update hospital bed distribution if provided
         if (parameters.bedDistribution) {
             this.hospital.updateBedDistribution(parameters.bedDistribution);
         }
         
-        // Store arrival rates and stay means for potential future use
         if (parameters.arrivalRates) {
             this.arrivalRates = parameters.arrivalRates;
         }
@@ -105,6 +99,9 @@ export class Simulator {
                 case 'Departure':
                     this.events.push(new DischargeEvent(time, patient_id, disease, allocation));
                     break;
+                case 'Rejected':
+                    this.events.push(new RejectionEvent(time, patient_id, disease, allocation));
+                    break;
             }
         }
     }
@@ -113,16 +110,12 @@ export class Simulator {
         let eventsToResolve = this.events.filter(event => event.time <= time && !event.resolved).sort((a, b) => a.time - b.time);
         for (let event of eventsToResolve) 
             event.resolve(this.hospital);
-
-        // this.events = this.events.filter(event => event.time > time || event.resolved);
     }
 
-    // Method to reset simulation state
     reset() {
         this.events.forEach(event => event.resolved = false);
         this.hospital = new Hospital();
         
-        // Reapply current parameters if they exist
         if (this.currentParameters) {
             this.updateParameters(this.currentParameters);
         }

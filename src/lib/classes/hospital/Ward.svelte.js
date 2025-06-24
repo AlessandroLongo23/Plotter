@@ -3,7 +3,7 @@ import { Bed } from '$lib/classes/hospital/Bed.svelte.js';
 import { fromHexToHsl } from '$lib/utils/color.svelte.js';
 
 export class Ward {
-    constructor(disease, pos, size, rotation, numBeds, color) {
+    constructor(disease, pos, size, rotation, numBeds, color, relocationsProbabilities, urgency) {
         this.pos = pos;
         this.disease = disease;
         this.size = size;
@@ -18,6 +18,8 @@ export class Ward {
             0,
             this.color
         ));
+        this.relocationsProbabilities = relocationsProbabilities;
+        this.urgency = urgency;
     }
 
     draw(p5, hospital) {
