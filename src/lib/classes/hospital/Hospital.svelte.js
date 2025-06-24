@@ -6,9 +6,11 @@ export class Hospital {
     constructor(data) {
         this.wards = [];
         this.patients = [];
+        let ws = [];
         wards.subscribe(wards => {
-            this.wards = wards.map(ward => new Ward(ward.disease, ward.pos, ward.size, ward.rotation, ward.assignedBeds, ward.color));
+            ws = wards;
         });
+        this.wards = ws.map(ward => new Ward(ward.disease, ward.pos, ward.size, ward.rotation, ward.assignedBeds, ward.color));
     }
 
     draw(p5) {

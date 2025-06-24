@@ -42,21 +42,21 @@
     });
 
     // Watch for ward changes and update simulator if we have data
-    $effect(() => {
-        const wardBeds = $wards.map(w => `${w.disease}:${w.assignedBeds}`).join(',');
-        if (hasSimulationData && simulator && wardBeds) {
-            updateSimulatorWithCurrentParameters();
-        }
-    });
+    // $effect(() => {
+    //     const wardBeds = $wards.map(w => `${w.disease}:${w.assignedBeds}`).join(',');
+    //     if (hasSimulationData && simulator && wardBeds) {
+    //         updateSimulatorWithCurrentParameters();
+    //     }
+    // });
 
     // Watch for parameter changes and update simulator if we have data
-    $effect(() => {
-        const arrivalRatesStr = JSON.stringify($simulationParameters.arrivalRates);
-        const stayMeansStr = JSON.stringify($simulationParameters.stayMeans);
-        if (hasSimulationData && simulator && arrivalRatesStr && stayMeansStr) {
-            updateSimulatorWithCurrentParameters();
-        }
-    });
+    // $effect(() => {
+    //     const arrivalRatesStr = JSON.stringify($simulationParameters.arrivalRates);
+    //     const stayMeansStr = JSON.stringify($simulationParameters.stayMeans);
+    //     if (hasSimulationData && simulator && arrivalRatesStr && stayMeansStr) {
+    //         updateSimulatorWithCurrentParameters();
+    //     }
+    // });
 
     const loadSimulationData = async (data) => {
         if (data.event_history) {
@@ -274,7 +274,7 @@
                     // Reset the simulator state
                     if (simulator) {
                         simulator.reset();
-                        updateSimulatorWithCurrentParameters();
+                        // updateSimulatorWithCurrentParameters();
                     }
                 } else if (p5.key === '+') {
                     // Increase speed

@@ -18,13 +18,11 @@
 
 	const dispatch = createEventDispatcher();
 	
-	// Service stores
 	let status = $state('ready');
 	let error = $state(null);
 	let defaultParameters = $state(null);
 
 	const setupHttpStores = async () => {
-		// Subscribe to HTTP stores
 		httpApiService.status.subscribe(value => status = value);
 		httpApiService.error.subscribe(value => error = value);
 		httpApiService.defaultParameters.subscribe(value => defaultParameters = value);
@@ -32,7 +30,6 @@
 			simulationRunning.set(value);
 		});
 		
-		// Fetch defaults immediately
 		try {
 			await httpApiService.fetchDefaults();
 		} catch (e) {
@@ -40,17 +37,6 @@
 		}
 	};
 	
-	// Load default parameters when they arrive
-	$effect(() => {
-		if (defaultParameters) {
-			simulationParameters.update(params => ({
-				...params,
-				arrivalRates: defaultParameters.arrival_rates,
-				stayMeans: defaultParameters.stay_means
-			}));
-		}
-	});
-
 	onMount(() => {
 		setupHttpStores();
 	});
@@ -84,7 +70,6 @@
 	});
 
 	const runSimulation = async () => {
-		// Prepare bed distribution from wards
 		const bedDistribution = {};
 		$wards.forEach(ward => {
 			bedDistribution[ward.disease] = ward.assignedBeds;
@@ -100,21 +85,40 @@
 		console.log('🚀 Running simulation with parameters:', parameters);
 
 		try {
-				await httpApiService.runSimulation(parameters);
+			await httpApiService.runSimulation(parameters);
 		} catch (e) {
 			console.error('Simulation failed:', e);
 		}
 	};
 
-	const resetParameters = () => {
+	const resetBeds = () => {
+		if (defaultParameters) {
+			wards.update(wardsArray => {
+				return wardsArray.map(ward => ({
+					...ward,
+					assignedBeds: defaultParameters.bed_distribution[ward.disease]
+				}));
+			});
+		}
+	}
+
+	const resetArrivalRates = () => {
 		if (defaultParameters) {
 			simulationParameters.update(params => ({
-				time: 365,
+				...params,
 				arrivalRates: defaultParameters.arrival_rates,
-				stayMeans: defaultParameters.stay_means
 			}));
 		}
 	};
+
+	const resetStayMeans = () => {
+		if (defaultParameters) {
+			simulationParameters.update(params => ({
+				...params,
+				stayMeans: defaultParameters.stay_means
+			}));
+		}
+	}
 </script>
 
 <div id="sidebar" class="h-full fixed left-0 top-0 transition-all duration-300 flex flex-col shadow-2xl {isSidebarOpen ? 'w-96' : 'w-12'}" bind:this={sidebarElement}>
@@ -187,14 +191,7 @@
 						<h3 class="text-sm font-medium text-white/90 uppercase tracking-wider">Ward Beds</h3>
 						<button
 							class="p-1 rounded-md hover:bg-zinc-700/70 transition-all text-white/80 hover:text-white/100 cursor-pointer"
-							onclick={() => {
-								wards.update(wardsArray => {
-									return wardsArray.map(ward => ({
-										...ward,
-										assignedBeds: ward.maxBeds
-									}));
-								});
-							}}
+							onclick={resetBeds}
 						>
 							<ls.RefreshCcw size={16} />
 						</button>
@@ -228,8 +225,8 @@
 					<div class="flex items-center justify-between mb-3">
 						<h3 class="text-sm font-medium text-white/90 uppercase tracking-wider">Arrival Rates</h3>
 						<button
-							class="p-1 rounded-md hover:bg-zinc-700/70 transition-all text-white/80 hover:text-white/100"
-							onclick={resetParameters}
+							class="p-1 rounded-md hover:bg-zinc-700/70 transition-all text-white/80 hover:text-white/100 cursor-pointer"
+							onclick={resetArrivalRates}
 						>
 							<ls.RefreshCcw size={16} />
 						</button>
@@ -251,7 +248,15 @@
 
 				<!-- Stay Means -->
 				<div class="p-3 bg-zinc-800/40">
-					<h3 class="text-sm font-medium text-white/90 uppercase tracking-wider mb-3">Length of Stay</h3>
+					<div class="flex items-center justify-between mb-3">
+						<h3 class="text-sm font-medium text-white/90 uppercase tracking-wider">Length of Stay</h3>
+						<button
+							class="p-1 rounded-md hover:bg-zinc-700/70 transition-all text-white/80 hover:text-white/100 cursor-pointer"
+							onclick={resetStayMeans}
+						>
+							<ls.RefreshCcw size={16} />
+						</button>
+					</div>
 					
 					<div class="space-y-3">
 						{#each Object.keys($simulationParameters.stayMeans) as disease}

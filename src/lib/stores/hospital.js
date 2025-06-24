@@ -85,9 +85,8 @@ export const patientTypes = writable([
     }
 ])
 
-// Simulation parameters
 export const simulationParameters = writable({
-    time: 365, // simulation time in days
+    time: 365,
     arrivalRates: {
         A: 14.5,
         B: 11.0,
@@ -106,6 +105,5 @@ export const simulationParameters = writable({
     }
 });
 
-// Simulation results
 export const simulationResults = writable(null);
 export const simulationRunning = writable(false);
